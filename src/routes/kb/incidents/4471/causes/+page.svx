@@ -1,6 +1,6 @@
 ---
 layout: runbook
-title: '#4471 · two problems, not one'
+title: '#4471 · three problems, not one'
 owner: QwertyMegaDev
 status: open
 reviewed: 2026-11-01
@@ -8,35 +8,59 @@ signature: QwertyMegaDev
 ---
 
 <script>
+  import reports from '#lib/data/reports-4471.json';
+  import notes from '#lib/data/desk-notes.json';
+  import { groupByCause, readAs, uniqueById } from '#lib/kb/causes';
+  import { tenantOf } from '#lib/kb/locales';
   import CauseTable from '#lib/kb/CauseTable.svelte';
   import Callout from '#lib/kb/Callout.svelte';
   import RenderStamp from '#lib/kb/RenderStamp.svelte';
 
   const repo = 'https://github.com/qwertymegadev-cloud/s01e03-what-it-shows/issues';
+
+  // The desk's own functions, as exported. A report the desk read as a one-day move leaves the
+  // cause it is filed under and counts once, under its own problem.
+  const merged = uniqueById(reports).filter((r) => r.mergedInto === 4471);
+  const groups = groupByCause(merged, tenantOf);
+  const filed = (cause) => groups.find((g) => g.cause === cause);
+  const flips = (cause) => (filed(cause)?.reports.length ?? 0) - (filed(cause) ? readAs(filed(cause), notes.oneDayMove) : 0);
+  const oneDay = groups.reduce((n, g) => n + readAs(g, notes.oneDayMove), 0);
+
+  const problems = [
+    { key: 'parser', what: 'the shared parser reads day-first dates month first', reports: flips('parser'), ticket: 1 },
+    { key: 'hint', what: 'the booking-v3 form hints MM/DD/YYYY, then reads the date day first', reports: flips('hint'), ticket: 2 },
+    { key: 'one-day', what: 'the booking lands one day early, not flipped', reports: oneDay, ticket: 3 },
+  ];
+  const total = problems.reduce((n, p) => n + p.reports, 0);
 </script>
 
 [#4471](/kb/incidents/4471) says one issue with one fix queued. Read report by report, it holds
-two problems. Each needs its own fix, and each now has its own ticket.
+three problems. Each needs its own fix, and each now has its own ticket.
 
 <Callout kind="warn">
-The parser fix queued for #4471 does not close #4471. The booking-v3 form stays broken after it
-ships, and the one-day moves need a check of their own.
+The parser fix queued for #4471 does not close #4471. The booking-v3 form and the one-day moves
+stay broken after it ships.
 </Callout>
 
-## What is in #4471
+## The problems in #4471
+
+<table>
+  <thead><tr><th>problem</th><th>reports</th><th>ticket</th></tr></thead>
+  <tbody>
+    {#each problems as p (p.key)}
+      <tr><td><code>{p.key}</code> {p.what}</td><td><strong>{p.reports}</strong></td><td><a href="{repo}/{p.ticket}">#{p.ticket}</a></td></tr>
+    {/each}
+  </tbody>
+</table>
+
+<p>{total} of {merged.length} reports, each counted once, under one problem.</p>
+
+## The desk's cause table
 
 <CauseTable ticket={4471} />
 
-This is the desk's own view of #4471, built from the ticket export at render time. Each row is
-one problem with its own ticket, and each ticket counts its reports the way this table does:
-
-| row | problem | ticket |
-| --- | --- | --- |
-| `parser` | the shared parser reads day-first dates month first | <a href="{repo}/1">#1</a> |
-| `hint` | the booking-v3 form hints `MM/DD/YYYY`, then reads the date day first | <a href="{repo}/2">#2</a> |
-
-The reports in the footnote, read as a one-day move, are filed under `parser` by tenant and count
-in #1. Their notes are kept in <a href="{repo}/3">#3</a>, closed as tracked inside #1.
+The `parser` row still holds the reports read as a one-day move: the desk files them there by
+tenant. In the table above they count only under `one-day`.
 
 ## How to tell them apart
 
@@ -47,18 +71,19 @@ in #1. Their notes are kept in <a href="{repo}/3">#3</a>, closed as tracked insi
   type the tenant's way, day first. People follow the hint, and the date swaps. Only reports that
   came in through the form, at a tenant on booking-v3. Fixing the parser does not fix this; the
   hint has to match what the form reads.
-- **one-day move**, inside `parser`: the booking moves by one day, not by a swap. Tuesday
-  becomes Monday, one client gets Tuesday while another in a different time zone gets Monday.
-  Check these reports again once the #1 fix ships: a time zone shift would survive it.
+- **`one-day`**: the booking moves by one day, not by a swap. Tuesday becomes Monday, one client
+  gets Tuesday while another in a different time zone gets Monday, an invite arrives before the
+  booking was made. That looks like a time zone shift when the date is stored or sent, not a
+  parser bug. The desk listed these reports in its notes, but no fix covers them.
 
-## Why one ticket hid two
+## Why one ticket hid three
 
 - Triage merges on the subject line ([decision 0001](/kb/decisions/0001-dedupe-by-subject)).
-  "Wrong date" fits both problems, so both landed in one ticket. Merging on subject
+  "Wrong date" fits all three problems, so all three landed in one ticket. Merging on subject
   alone needs a cause check before it.
 - The intake tag is a guess from the reporter's browser, not from the tenant: the "tagged as"
   column shows how often it disagrees. Group by tenant, form and channel, as `causes.ts` does.
-- The table above already marked `hint` as "no ticket of its own" and footnoted the one-day
+- The cause table already marked `hint` as "no ticket of its own" and footnoted the one-day
   moves. Status `known` made it read as finished.
 
 <RenderStamp {signature} />
