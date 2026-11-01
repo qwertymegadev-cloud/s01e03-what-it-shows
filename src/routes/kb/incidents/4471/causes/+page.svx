@@ -51,7 +51,7 @@ in #1. Their notes are kept in <a href="{repo}/3">#3</a>, closed as tracked insi
   becomes Monday, one client gets Tuesday while another in a different time zone gets Monday.
   Check these reports again once the #1 fix ships: a time zone shift would survive it.
 
-## Why one ticket hid three
+## Why one ticket hid two
 
 - Triage merges on the subject line ([decision 0001](/kb/decisions/0001-dedupe-by-subject)).
   "Wrong date" fits both problems, so both landed in one ticket. Merging on subject

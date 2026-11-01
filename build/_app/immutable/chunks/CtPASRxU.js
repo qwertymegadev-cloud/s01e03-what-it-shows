@@ -8,7 +8,7 @@ type the tenant’s way, day first. People follow the hint, and the date swaps. 
 came in through the form, at a tenant on booking-v3. Fixing the parser does not fix this; the
 hint has to match what the form reads.</li> <li><strong>one-day move</strong>, inside <code>parser</code>: the booking moves by one day, not by a swap. Tuesday
 becomes Monday, one client gets Tuesday while another in a different time zone gets Monday.
-Check these reports again once the #1 fix ships: a time zone shift would survive it.</li></ul> <h2>Why one ticket hid three</h2> <ul><li>Triage merges on the subject line (<a href="/kb/decisions/0001-dedupe-by-subject">decision 0001</a>).
+Check these reports again once the #1 fix ships: a time zone shift would survive it.</li></ul> <h2>Why one ticket hid two</h2> <ul><li>Triage merges on the subject line (<a href="/kb/decisions/0001-dedupe-by-subject">decision 0001</a>).
 “Wrong date” fits both problems, so both landed in one ticket. Merging on subject
 alone needs a cause check before it.</li> <li>The intake tag is a guess from the reporter’s browser, not from the tenant: the “tagged as”
 column shows how often it disagrees. Group by tenant, form and channel, as <code>causes.ts</code> does.</li> <li>The table above already marked <code>hint</code> as “no ticket of its own” and footnoted the one-day
