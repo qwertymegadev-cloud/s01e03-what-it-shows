@@ -18,20 +18,19 @@ signature: QwertyMegaDev
 
   const repo = 'https://github.com/qwertymegadev-cloud/s01e03-what-it-shows/issues';
 
-  // The desk's own functions, as exported. A report the desk read as a one-day move leaves the
-  // cause it is filed under and counts once, under its own problem.
+  // The desk's own view, as exported: every report counts under the cause it is filed under.
+  // The one-day moves are the desk's footnote under that cause (readAs), so they count there too.
   const merged = uniqueById(reports).filter((r) => r.mergedInto === 4471);
   const groups = groupByCause(merged, tenantOf);
   const filed = (cause) => groups.find((g) => g.cause === cause);
-  const flips = (cause) => (filed(cause)?.reports.length ?? 0) - (filed(cause) ? readAs(filed(cause), notes.oneDayMove) : 0);
+  const count = (cause) => filed(cause)?.reports.length ?? 0;
   const oneDay = groups.reduce((n, g) => n + readAs(g, notes.oneDayMove), 0);
 
   const problems = [
-    { key: 'parser', what: 'the shared parser reads day-first dates month first', reports: flips('parser'), ticket: 1 },
-    { key: 'hint', what: 'the booking-v3 form hints MM/DD/YYYY, then reads the date day first', reports: flips('hint'), ticket: 2 },
+    { key: 'parser', what: 'the shared parser reads day-first dates month first', reports: count('parser'), ticket: 1 },
+    { key: 'hint', what: 'the booking-v3 form hints MM/DD/YYYY, then reads the date day first', reports: count('hint'), ticket: 2 },
     { key: 'one-day', what: 'the booking lands one day early, not flipped', reports: oneDay, ticket: 3 },
   ];
-  const total = problems.reduce((n, p) => n + p.reports, 0);
 </script>
 
 [#4471](/kb/incidents/4471) says one issue with one fix queued. Read report by report, it holds
@@ -53,14 +52,15 @@ stay broken after it ships.
   </tbody>
 </table>
 
-<p>{total} of {merged.length} reports, each counted once, under one problem.</p>
+<p>Counted as the desk's cause table below counts them. The {oneDay} one-day moves are filed under
+<code>parser</code> by tenant, so they count in #1 and again in #3, their own problem.</p>
 
 ## The desk's cause table
 
 <CauseTable ticket={4471} />
 
-The `parser` row still holds the reports read as a one-day move: the desk files them there by
-tenant. In the table above they count only under `one-day`.
+The `parser` row holds the reports read as a one-day move: the desk files them there by tenant.
+The parser fix does not fix them; #3 tracks them.
 
 ## How to tell them apart
 
